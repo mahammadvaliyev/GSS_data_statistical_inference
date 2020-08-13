@@ -1,0 +1,128 @@
+---
+title: "Statistical inference with the GSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+
+```{r load-data}
+load("gss.Rdata")
+```
+
+
+
+* * *
+
+## Part 1: Data
+
+### Background
+The General Social Survey (GSS) is a survey that is regularly collected since 1972 by the National Opinion Research Center at the University of Chicago. GSS gathers data on contemporary American society in order to monitor and explain trends and constants in demographic, behavioral, and attitudinal questions, plus topics of special interest.  Hundreds of trends have been tracked since 1972. In addition, since the GSS adopted questions from earlier surveys, trends can be followed for up to 80 years. Among the topics covered are civil liberties, crime and violence, intergroup tolerance, morality, national spending priorities, psychological well-being, social mobility, stress and traumatic events. It is one of the most influential studies in the social sciences, and is frequently referenced in leading publications.
+
+### Data collection
+
+The target population of the GSS is adults (18+) living in households in the United States. The GSS sample is drawn using an area probability design that randomly selects respondents in households across the United States to take part in the survey. Respondents that become part of the GSS sample are from a mix of urban, suburban, and rural geographic areas. Participation in the study is strictly voluntary.  In addition, the GSS uses large, clearly defined sampling frames that are updated over time so the survey targets a well-defined population that is representative of the target population of US adults.
+
+### Scope of inference
+
+GSS claims that its samples closely resemble US population distributions as reported in the Census. However, survey non-response, sampling variation, can lead the GSS sample to deviate from known population figures for some variables. Ignoring that minor issues that can diminish the power of the study, as random sampling is used in this study and generally samples resemble US population distribution, results from the study can be generalized to the entire US population. Due to observational nature (no random assignment to groups) of the study, no causal relationships can be established from the data. However, it is still possible to come up with correlation between some variables of interest.
+
+* * *
+
+## Part 2: Research question
+
+#### Is satisfaction with financial situation different among people with different educational levels ?
+
+There are numerous studies on the effect of educational level on satisfaction with life or job. There is some belief that as one becomes more educated his/her expectations from life increase and generally they believe that they are deserving more that they possess. Here I will try to explore slightly different research question and explore whether there is a statistically significant difference in level of satisfaction with financial situation among the people with different educational levels. 
+
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+Two variables store the data required to explore our research question:
+.	degree- categorical variable which indicates the highest degree earned by individual (levels: LT HIGH SCHOOL, HIGH SCHOOL, JUNIOR COLLEGE, BACHELOR, GRADUATE)
+.	satfin- categorical variable which indicates the satisfaction level with financial situation of an individual (levels: SATISFIED, MORE OR LESS, NOT AT ALL)
+
+First, let's remove the missing values from both variables and create new dataframe (gss_mod) which stores only those 2 variables of interest:
+```{r}
+gss_mod <- gss[ !is.na(gss$degree) & !is.na(gss$satfin), ]
+gss_variables <- c("degree", "satfin")
+gss_mod <- gss_mod[gss_variables]
+summary(gss_mod)
+```
+As we have two categorical variables, a two-way table would be a nice representation of our data:
+```{r}
+table(gss_mod$degree, gss_mod$satfin)
+```
+
+Bar chart will help to get better insight from data:
+```{r}
+ggplot(aes(x=degree), data=gss_mod) + geom_bar(aes(fill=satfin), position = position_dodge()) + ggtitle('Educational level vs. financial situation')
+```
+
+In general, in all 5 groups representing individuals with different educational levels, most individuals are more or less satisfied with their financial situation. Contrary to prior menntioned belief, according to bar chart, possessing more advanced degrees (bachelor, graduate) correlates with more satisfaction with financial status, as the proportion of people not satisfied with their financial status is significantly less than of people of having junior college degree or lower.
+
+* * *
+
+## Part 4: Inference
+
+Here we investigate whether this difference in satisfaction levels is different due to chance or data provides significant evidence to prove that correlation. 
+
+#### Hypotheses
+To answer this question we first should state our null and alternative hypothesis:
+
+**Ho:** There is not any relationship between educational level and satisfaction with financial situation and the difference observed is strictly due to chance.
+
+**Ha:** There is a statistically significant relationship between educational level and satisfaction with financial situation, these variables are dependent.
+
+#### The method
+Chi-Square Independence test will be used since we have two categorical variables from a single population and the goal is to check dependence between variables and quantify how different are the observed values from expected ones.
+
+#### Conditions for the test
+Chi-Square Test for Independence requires the following conditions to be met:
+
+**Independent observations **:
+The sampling method is random and 51498 observations are less than 10% of population, so we have independent observations.
+
+**Each case only contributes to one cell in the table**:
+As observations are independent this condition is also meet.
+
+**Expected frequency of counts per cell of the table is at least 5**:
+To check this condition we need to calculate expected counts for each cell.
+
+```{r}
+chisq.test(table(gss_mod$degree, gss_mod$satfin))$expected
+```
+As it is evident from expected counts table, the condition of at least 5 counts per cell holds.
+
+#### Inference
+Finally, as we met all the necessary conditions we can proceed to the inference.
+```{r}
+chisq.test(table(gss_mod$degree, gss_mod$satfin))
+```
+#### Interpretation of results
+We performed a Chi-Square Test and got very large test value which leads to very low p-value (2.2e-16). This p-value enables us to reject the null hypothesis and state there is dependence between educational level and satisfaction with financial status and it is not due to chance.
+
+### References
+https://www.wikiwand.com/en/General_Social_Survey
+
+http://gss.norc.org
+
+
+  
+
